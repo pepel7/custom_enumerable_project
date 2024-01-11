@@ -1,5 +1,24 @@
+class Array
+  def my_each
+    return to_enum(:my_each) unless block_given?
+
+    for element in self do
+      yield(element)
+    end
+  end
+
+  def my_each_with_index
+    return to_enum(:my_each_with_index) unless block_given?
+
+    index = 0
+    for element in self do
+      yield(element, index)
+      index += 1
+    end
+  end
+end
+
 module Enumerable
-  # Your code goes here
   def my_select
     selected = []
     self.my_each do |element|
@@ -33,7 +52,7 @@ module Enumerable
     return self.length unless block_given?
 
     count = 0
-    self.each do |element|
+    self.my_each do |element|
       count = count + 1 if yield(element)
     end
     count
@@ -41,43 +60,42 @@ module Enumerable
 
   def my_map
     mapped_arr = []
-    self.each do |element|
+    self.my_each do |element|
       mapped_arr << yield(element)
     end
     mapped_arr
   end
 
-  def my_inject(initial_operand = nil, symbol = nil)
-    if initial_operand.is_a?(Symbol)
-      symbol = initial_operand
+  def my_inject(*args)
+    case args
+    in [a, b]
+      initial_operand = a
+      symbol = b
+    in [a] if a.is_a?(Symbol)
+      symbol = a
+    in [a] unless a.is_a?(Symbol)
+      initial_operand = a
+    else
+      initial_operand = nil
+      symbol = nil
     end
 
     result = initial_operand.nil? ? self[0] : initial_operand
     
     if symbol.is_a?(Symbol)
-      self.each do |element|
+      self.my_each_with_index do |element, index|
+        next if initial_operand.nil? && index.zero?
+
         result.&symbol(element)
       end
     end
 
-    self.each do |element|
+    self.my_each_with_index do |element, index|
+      next if initial_operand.nil? && index.zero?
+
       result = yield(result, element)
     end
 
     result
-  end
-end
-
-# You will first have to define my_each
-# on the Array class. Methods defined in
-# your enumerable module will have access
-# to this method
-class Array
-  def my_each
-    self.each {|element| yield(element)}
-  end
-
-  def my_each_with_index
-    self.each_with_index {|element, index| yield(element, index)}
   end
 end
